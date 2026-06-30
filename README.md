@@ -122,7 +122,7 @@ If you do not add a persistent disk, the app still runs, but SQLite data can dis
 
 ## Hugging Face Spaces Deployment
 
-Use a Docker Space and keep the included `Dockerfile` at the project root.
+Use a Docker Space. Rename `Dockerfile.huggingface` to `Dockerfile` before uploading to Hugging Face Spaces.
 
 Hugging Face Spaces may restart containers, so for long-term persistence use persistent storage if available, or move the database to an external managed database.
 
