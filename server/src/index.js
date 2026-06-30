@@ -116,6 +116,26 @@ app.get('/api/auth/me', async (req, res) => {
   res.json(publicUser(user));
 });
 
+app.put('/api/auth/password', async (req, res) => {
+  const { current_password, new_password } = req.body;
+  if (!current_password || !new_password) {
+    return res.status(400).json({ error: 'Current password and new password are required.' });
+  }
+  if (String(new_password).length < 6) {
+    return res.status(400).json({ error: 'New password must be at least 6 characters.' });
+  }
+
+  const user = await db.prepare('SELECT * FROM users WHERE id = ? AND active = 1').get(req.user.id);
+  if (!user) return res.status(401).json({ error: 'User is inactive or missing.' });
+  if (!verifyPassword(current_password, user.password_hash)) {
+    return res.status(400).json({ error: 'Current password is incorrect.' });
+  }
+
+  await db.prepare('UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?').run(hashPassword(new_password), now(), req.user.id);
+  await logActivity({ actor: actorName(req), action: 'updated', entityType: 'User', entityId: req.user.id, summary: `Changed password for "${user.username}"`, details: { id: user.id, username: user.username, display_name: user.display_name } });
+  res.json({ ok: true });
+});
+
 app.get('/api/users', async (req, res) => {
   if (!requireAdmin(req, res)) return;
   const users = await db.prepare('SELECT id, username, display_name, role, active, created_at, updated_at FROM users ORDER BY display_name ASC').all();

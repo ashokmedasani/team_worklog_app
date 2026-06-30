@@ -154,6 +154,7 @@ function App() {
     ['tasks', ClipboardList, 'Tasks'],
     ['logs', Clock3, 'Work Logs'],
     ['notes', MessageSquareText, 'Notes'],
+    ['profile', ShieldCheck, 'Profile'],
     ...(isAdmin ? [['audit', ShieldCheck, 'Audit']] : [])
   ];
 
@@ -231,6 +232,7 @@ function App() {
               {activeView === 'tasks' && <TasksView tasks={tasks} projects={projects} members={memberNames} selectedProjectId={selectedProjectId} reload={loadAll} canManage={canManage} />}
               {activeView === 'logs' && <LogsView logs={logs} tasks={tasks} members={memberNames} currentMember={currentMember} reload={loadAll} canManage={canManage} />}
               {activeView === 'notes' && <NotesView notes={notes} tasks={tasks} members={memberNames} currentMember={currentMember} reload={loadAll} canManage={canManage} />}
+              {activeView === 'profile' && <ProfileView user={session.user} />}
               {activeView === 'audit' && isAdmin && <AuditView auditLogs={auditLogs} />}
             </>
           )}
@@ -493,6 +495,56 @@ function UsersView({ users, reload, currentUserId }) {
         formatDateTime(user.updated_at),
         <RowActions onEdit={() => startEdit(user)} onDelete={() => remove(user.id)} canDelete={Number(user.id) !== Number(currentUserId)} />
       ])} />
+    </div>
+  );
+}
+
+function ProfileView({ user }) {
+  const [form, setForm] = useState({ current_password: '', new_password: '', confirm_password: '' });
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  async function submit(event) {
+    event.preventDefault();
+    setMessage('');
+    setError('');
+    if (form.new_password !== form.confirm_password) {
+      setError('New password and confirm password do not match.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await api('/api/auth/password', {
+        method: 'PUT',
+        body: JSON.stringify({ current_password: form.current_password, new_password: form.new_password })
+      });
+      setForm({ current_password: '', new_password: '', confirm_password: '' });
+      setMessage('Password updated successfully.');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <section className="panel">
+        <Title icon={ShieldCheck} text="My Profile" />
+        <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+          <div><p className="text-zinc-500">Name</p><p className="font-medium">{user.display_name}</p></div>
+          <div><p className="text-zinc-500">Username</p><p className="font-medium">{user.username}</p></div>
+          <div><p className="text-zinc-500">Access</p><span className="badge">{user.role}</span></div>
+        </div>
+      </section>
+      <FormPanel title="Change Password" onSubmit={submit} saving={saving}>
+        {error && <div className="md:col-span-2 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+        {message && <div className="md:col-span-2 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{message}</div>}
+        <PasswordInput label="Current Password" value={form.current_password} onChange={(current_password) => setForm({ ...form, current_password })} required />
+        <PasswordInput label="New Password" value={form.new_password} onChange={(new_password) => setForm({ ...form, new_password })} required />
+        <PasswordInput label="Confirm New Password" value={form.confirm_password} onChange={(confirm_password) => setForm({ ...form, confirm_password })} required />
+      </FormPanel>
     </div>
   );
 }
