@@ -47,6 +47,11 @@ if (!rootUser) {
   `).run(hashPassword(rootPassword), new Date().toISOString(), rootUsername);
   console.log(`Root admin password reset: username ${rootUsername}`);
 } else {
+  await db.prepare(`
+    UPDATE users
+    SET role = 'Admin', active = 1, updated_at = ?
+    WHERE username = ?
+  `).run(new Date().toISOString(), rootUsername);
   console.log(`Root admin already exists: username ${rootUsername}`);
 }
 

@@ -9,7 +9,7 @@
     "dev": "npm run seed && npm run build && npm start",
     "dev:split": "npm run seed && concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
     "build": "npm run build --prefix client",
-    "start": "npm start --prefix server",
+    "start": "npm run seed && npm start --prefix server",
     "seed": "npm run seed --prefix server"
   },
   "devDependencies": {

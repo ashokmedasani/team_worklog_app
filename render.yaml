@@ -12,3 +12,5 @@ services:
         sync: false
       - key: APP_SECRET
         generateValue: true
+      - key: RESET_ROOT_PASSWORD
+        value: true
