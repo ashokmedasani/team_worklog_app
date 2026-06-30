@@ -9,6 +9,8 @@ import {
   Clock3,
   Download,
   Edit,
+  Eye,
+  EyeOff,
   FileText,
   LayoutDashboard,
   LogOut,
@@ -282,7 +284,7 @@ function LoginPage({ onLogin }) {
         {error && <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
         <div className="space-y-4">
           <TextInput label="Username" value={form.username} onChange={(username) => setForm({ ...form, username })} required />
-          <TextInput label="Password" type="password" value={form.password} onChange={(password) => setForm({ ...form, password })} required />
+          <PasswordInput label="Password" value={form.password} onChange={(password) => setForm({ ...form, password })} required />
           <button className="primary-button w-full justify-center" disabled={saving}><Save size={16} />{saving ? 'Signing in...' : 'Sign In'}</button>
         </div>
       </form>
@@ -473,7 +475,7 @@ function UsersView({ users, reload, currentUserId }) {
       <FormPanel title={editing ? 'Edit Login User' : 'Create Login User'} onSubmit={submit} saving={saving} onCancel={editing ? () => { setEditing(null); setForm(emptyUser()); } : null}>
         <TextInput label="Username" value={form.username} onChange={(username) => setForm({ ...form, username })} required />
         <TextInput label="Display Name" value={form.display_name} onChange={(display_name) => setForm({ ...form, display_name })} required />
-        <TextInput label={editing ? 'New Password' : 'Password'} type="password" value={form.password} onChange={(password) => setForm({ ...form, password })} required={!editing} />
+        <PasswordInput label={editing ? 'New Password' : 'Password'} value={form.password} onChange={(password) => setForm({ ...form, password })} required={!editing} />
         <SelectInput label="Role" value={form.role} onChange={(role) => setForm({ ...form, role })} options={accessLevels} />
         <label className="input-wrap">
           <span>Active</span>
@@ -727,6 +729,29 @@ function DataTable({ columns, rows }) {
 
 function TextInput({ label, value, onChange, type = 'text', required, list, step, placeholder }) {
   return <label className="input-wrap"><span>{label}</span><input type={type} step={step} value={value || ''} onChange={(e) => onChange(e.target.value)} required={required} list={list} placeholder={placeholder} /></label>;
+}
+
+function PasswordInput({ label, value, onChange, required }) {
+  const [visible, setVisible] = useState(false);
+  const Icon = visible ? EyeOff : Eye;
+
+  return (
+    <label className="input-wrap">
+      <span>{label}</span>
+      <div className="relative">
+        <input className="pr-11" type={visible ? 'text' : 'password'} value={value || ''} onChange={(e) => onChange(e.target.value)} required={required} />
+        <button
+          className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+          type="button"
+          onClick={() => setVisible((next) => !next)}
+          title={visible ? 'Hide password' : 'Show password'}
+          aria-label={visible ? 'Hide password' : 'Show password'}
+        >
+          <Icon size={18} />
+        </button>
+      </div>
+    </label>
+  );
 }
 
 function TextArea({ label, value, onChange, required }) {
