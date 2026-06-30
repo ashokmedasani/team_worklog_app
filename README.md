@@ -40,7 +40,23 @@ Username: admin
 Password: admin123
 ```
 
-Change this password from **Users** after logging in.
+The deploy seed also creates a root Admin login if it does not already exist:
+
+```text
+Username: root
+Password: root12345
+```
+
+Change these passwords from **Users** or **Profile** after logging in.
+
+You can override these defaults in Render environment variables:
+
+```env
+DEFAULT_ADMIN_USERNAME=admin
+DEFAULT_ADMIN_PASSWORD=admin123
+ROOT_USERNAME=root
+ROOT_PASSWORD=root12345
+```
 
 For hot-reload frontend development, you can try `npm run dev:split`, which starts Express and Vite separately. The default `npm run dev` is the most reliable local command.
 
@@ -108,7 +124,7 @@ You can deploy manually through the Render dashboard or use the included `render
 3. Create a new Render **Web Service** from this GitHub repository.
 4. Use these settings:
    - Runtime: Node
-   - Build command: `npm install && npm run build && npm run seed`
+   - Build command: `bash build.sh`
    - Start command: `npm start`
 5. Add environment variables:
    - `NODE_ENV=production`

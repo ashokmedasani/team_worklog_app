@@ -3,7 +3,7 @@ services:
     name: team-worklog-app
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build && npm run seed
+    buildCommand: bash build.sh
     startCommand: npm start
     envVars:
       - key: NODE_ENV

@@ -8,16 +8,46 @@ function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
 
 await initDb();
 
-const existingAdmin = Number((await db.prepare("SELECT COUNT(*) AS count FROM users WHERE role = 'Admin'").get()).count);
+const defaultAdminUsername = process.env.DEFAULT_ADMIN_USERNAME || 'admin';
+const defaultAdminPassword = process.env.DEFAULT_ADMIN_PASSWORD || 'admin123';
+const rootUsername = process.env.ROOT_USERNAME || 'root';
+const rootPassword = process.env.ROOT_PASSWORD || 'root12345';
+const resetRootPassword = process.env.RESET_ROOT_PASSWORD === 'true';
 
-if (!existingAdmin) {
+async function findUser(username) {
+  return db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+}
+
+async function createAdmin(username, displayName, password) {
   await db.prepare(`
     INSERT INTO users (username, display_name, password_hash, role, active)
     VALUES (?, ?, ?, 'Admin', 1)
-  `).run('admin', 'System Admin', hashPassword('admin123'));
-  console.log('Default admin created: username admin, password admin123');
+  `).run(username, displayName, hashPassword(password));
+}
+
+const existingAdmin = Number((await db.prepare("SELECT COUNT(*) AS count FROM users WHERE role = 'Admin'").get()).count);
+
+if (!existingAdmin) {
+  await createAdmin(defaultAdminUsername, 'System Admin', defaultAdminPassword);
+  console.log(`Default admin created: username ${defaultAdminUsername}`);
 } else {
   console.log('Admin user already exists.');
+}
+
+const rootUser = await findUser(rootUsername);
+
+if (!rootUser) {
+  await createAdmin(rootUsername, 'Root Admin', rootPassword);
+  console.log(`Root admin created: username ${rootUsername}`);
+} else if (resetRootPassword) {
+  await db.prepare(`
+    UPDATE users
+    SET password_hash = ?, role = 'Admin', active = 1, updated_at = ?
+    WHERE username = ?
+  `).run(hashPassword(rootPassword), new Date().toISOString(), rootUsername);
+  console.log(`Root admin password reset: username ${rootUsername}`);
+} else {
+  console.log(`Root admin already exists: username ${rootUsername}`);
 }
 
 await closeDb();
