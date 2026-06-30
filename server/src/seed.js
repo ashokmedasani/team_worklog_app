@@ -6,12 +6,12 @@ function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
   return `${salt}:${hash}`;
 }
 
-initDb();
+await initDb();
 
-const existingAdmin = db.prepare("SELECT COUNT(*) AS count FROM users WHERE role = 'Admin'").get().count;
+const existingAdmin = Number((await db.prepare("SELECT COUNT(*) AS count FROM users WHERE role = 'Admin'").get()).count);
 
 if (!existingAdmin) {
-  db.prepare(`
+  await db.prepare(`
     INSERT INTO users (username, display_name, password_hash, role, active)
     VALUES (?, ?, ?, 'Admin', 1)
   `).run('admin', 'System Admin', hashPassword('admin123'));
@@ -20,5 +20,5 @@ if (!existingAdmin) {
   console.log('Admin user already exists.');
 }
 
-closeDb();
+await closeDb();
 console.log('Database ready.');

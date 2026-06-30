@@ -1,6 +1,6 @@
 # Team Worklog App
 
-A full working web-based task and work-log management application for small teams. It uses React, Tailwind CSS, Node.js, Express, and SQLite, and is designed to deploy cleanly on Render or Hugging Face Spaces.
+A full working web-based task and work-log management application for small teams. It uses React, Tailwind CSS, Node.js, Express, SQLite for local development, and PostgreSQL for Render deployment.
 
 ## Features
 
@@ -12,7 +12,7 @@ A full working web-based task and work-log management application for small team
 - Create, edit, delete, search, and filter tasks
 - Daily work logs with task, author, date, time spent, progress notes, blockers, and next steps
 - Task notes/comments with author, date, and content
-- Persistent SQLite storage
+- Persistent database storage with local SQLite or hosted PostgreSQL
 - Team member selector with no complex authentication
 - CSV export for tasks and work logs
 - Mobile responsive layout
@@ -88,23 +88,24 @@ Then open `http://localhost:5000`. Express serves the built React app and API fr
 
 ## Environment Variables
 
-Create `server/.env` from `server/.env.example` if you want custom settings.
+Create `.env` from `.env.example` if you want custom settings.
 
 ```env
 PORT=5000
-DATABASE_PATH=./db/team_worklog.sqlite
+DATABASE_URL=
+APP_SECRET=change-this-to-a-long-random-secret
 NODE_ENV=production
 ```
 
-SQLite is stored at `server/db/team_worklog.sqlite` by default. For Render, use a persistent disk and point `DATABASE_PATH` at that disk, for example `/var/data/team_worklog.sqlite`.
+If `DATABASE_URL` is empty, the app uses SQLite at `server/db/team_worklog.sqlite`. If `DATABASE_URL` is set, the app uses PostgreSQL. On Render, paste the Render PostgreSQL **Internal Database URL** into the web service environment variable named `DATABASE_URL`.
 
 ## Render Deployment
 
 You can deploy manually through the Render dashboard or use the included `render.yaml` blueprint.
 
-1. Push this project to GitHub.
-2. In Render, create a new **Web Service**.
-3. Select the repository.
+1. Create a Render PostgreSQL database.
+2. Copy the **Internal Database URL** from the database Connections page.
+3. Create a new Render **Web Service** from this GitHub repository.
 4. Use these settings:
    - Runtime: Node
    - Build command: `npm install && npm run build && npm run seed`
@@ -112,13 +113,13 @@ You can deploy manually through the Render dashboard or use the included `render
 5. Add environment variables:
    - `NODE_ENV=production`
    - `PORT=10000`
-   - `DATABASE_PATH=/var/data/team_worklog.sqlite`
-6. Add a Render persistent disk:
-   - Mount path: `/var/data`
-   - Size: 1 GB is enough for a prototype
-7. Deploy.
+   - `DATABASE_URL=<paste your Render Internal Database URL>`
+   - `APP_SECRET=<any long random secret>`
+6. Deploy.
 
-If you do not add a persistent disk, the app still runs, but SQLite data can disappear when Render restarts the service.
+Use the **Internal Database URL** when the web service and database are both on Render. The External Database URL is mainly for connecting from your computer or another host.
+
+Render free web services can sleep after inactivity. Your data will stay in PostgreSQL, but the first request after sleep may take a little longer.
 
 ## Hugging Face Spaces Deployment
 
@@ -126,14 +127,20 @@ Use a Docker Space. Rename `Dockerfile.huggingface` to `Dockerfile` before uploa
 
 Hugging Face Spaces may restart containers, so for long-term persistence use persistent storage if available, or move the database to an external managed database.
 
-## PostgreSQL Upgrade Path
+## Database Mode
 
-The API currently isolates database access in `server/src/db.js` and SQL statements in `server/src/index.js`. To upgrade later:
+- Local development: leave `DATABASE_URL` empty and SQLite is used automatically.
+- Render deployment: set `DATABASE_URL` and PostgreSQL is used automatically.
+- The first deploy runs `npm run seed`, which creates the first admin account if no Admin exists.
 
-1. Replace `better-sqlite3` with `pg` or an ORM such as Prisma or Drizzle.
-2. Move schema creation into migrations.
-3. Set `DATABASE_URL` for PostgreSQL.
-4. Keep the existing REST routes and frontend unchanged.
+Default first login:
+
+```text
+Username: admin
+Password: admin123
+```
+
+Change this password from **Users** after logging in.
 
 ## API Endpoints
 
@@ -158,7 +165,7 @@ The API currently isolates database access in `server/src/db.js` and SQL stateme
 ```text
 team-worklog-app/
   client/              React + Tailwind frontend
-  server/              Express API and SQLite database setup
+  server/              Express API and database setup
     db/                SQLite database location
     src/
       db.js            Database connection and schema

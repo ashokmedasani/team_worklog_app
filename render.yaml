@@ -2,17 +2,13 @@ services:
   - type: web
     name: team-worklog-app
     runtime: node
-    plan: starter
+    plan: free
     buildCommand: npm install && npm run build && npm run seed
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
-      - key: DATABASE_PATH
-        value: /var/data/team_worklog.sqlite
+      - key: DATABASE_URL
+        sync: false
       - key: APP_SECRET
         generateValue: true
-    disk:
-      name: team-worklog-data
-      mountPath: /var/data
-      sizeGB: 1
